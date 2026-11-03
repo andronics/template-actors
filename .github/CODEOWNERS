@@ -1,0 +1,3 @@
+# Every change to template-actors reaches every project that stacks it, so every PR needs a
+# maintainer's approval (the main ruleset requires review from Code Owners).
+*       @andronics

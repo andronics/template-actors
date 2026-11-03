@@ -1,0 +1,20 @@
+name: Courier
+emoji: 🕰️
+description: Brings each template's weekly update into its projects, and bumps the template repos' pins
+theme: fantasy
+status: active
+identity: github-app
+app: andronics-courier
+app_id: 5582536
+client_id: Iv23lik9fo1QtYezn4Me
+key: actors/courier/private-key
+roles: [update]
+fallback: required
+permissions: {contents: write, issues: write, pull_requests: write, workflows: write, metadata: read}
+acts_on: [andronics/template-base, andronics/brain]
+trigger: {workflows: [template-update.yml], schedule: "0 6 * * 1"}
+merge_policy: never
+labels:
+  - {name: template-update, color: 0e8a16, description: A template's update}
+branch_prefix: chore/
+avatar: {file: courier.png, prompt: A hooded courier with an hourglass satchel riding between two forges}

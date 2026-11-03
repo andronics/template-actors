@@ -1,0 +1,19 @@
+# Weekly pin bumps (template-base's decision 0002): calls template-base's pin-bumps.yml, which runs
+# self-hosted Renovate with the shared preset (renovate.json) as the Courier App and opens up to two PRs
+# here: fix(deps) for pins under template/, chore(deps) for this repository's own. Renovate bumps the
+# pin below too. Needs the variable PIN_BUMP_APP_CLIENT_ID and the secret PIN_BUMP_APP_PRIVATE_KEY;
+# without them the called workflow only prints a notice.
+name: Pin bumps
+
+on:
+  schedule:
+    - cron: '13 3 * * 0' # Sunday, inside the preset's "before 4am on sunday"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  pin-bumps:
+    name: Pin bumps
+    uses: andronics/template-base/.github/workflows/pin-bumps.yml@7b1bb91d1121f739c4c83bd420c586ed2bef9007 # v2.0.6
+    secrets: inherit

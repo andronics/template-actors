@@ -1,0 +1,27 @@
+# Template-owned: template-actors. Creates every declared actor's labels (.github/actors/*.yml),
+# idempotently (gh label create --force), when the manifests change on main, or on demand.
+# `uv run scripts/actors.py labels` does the same locally, and so does actors-setup.py.
+name: Actor labels
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/actors/**']
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  labels:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: uv run --quiet scripts/actors.py labels -R "$GITHUB_REPOSITORY"

@@ -1,0 +1,67 @@
+# Template-owned: template-actors. The PR contract's merge policy (decision 0001): on a PR an
+# actor opened from its own branch in this repository, queue auto-merge when its manifest
+# (.github/actors/<slug>.yml) says auto-on-ci or auto-after-codeowner, and add its labels. The
+# actor is found by its bot login (<app>[bot]) and branch prefix, from
+# the manifests on the base branch, never the PR's. It never approves: the main ruleset decides
+# what a merge needs (the required `ci` check; for auto-after-codeowner, a code owner's review).
+# It queues with the update role's App token (template-base's app-token action), else GITHUB_TOKEN.
+# A local actor queues its own (scripts/actors-cron.sh); Dependabot's is template-base's. Needs
+# the repository setting "Allow auto-merge".
+name: Actor auto-merge
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  automerge:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository
+      && endsWith(github.event.pull_request.user.login, '[bot]')
+      && github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # The base branch's manifests: a PR can't grant itself a merge policy.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - id: actor
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: uv run --quiet scripts/actors.py automerge --author "$AUTHOR" --head-ref "$HEAD_REF" >> "$GITHUB_OUTPUT"
+      # The update role's App queues the merge, so the merge commit starts main's workflows (a merge
+      # GITHUB_TOKEN queued starts none). Without it, GITHUB_TOKEN (template-base decision 0004).
+      # Pinned to template-base#48's merge commit until its first release, v2.1.0; Renovate moves it.
+      - id: token
+        uses: andronics/template-base/.github/actions/app-token@d90a148eee717d9c5761813b3c3e0858a4cdf786 # v2.1.0
+        with:
+          role: UPDATE
+          client-id: ${{ vars.UPDATE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.UPDATE_APP_PRIVATE_KEY }}
+          legacy-client-id: ${{ vars.PIN_BUMP_APP_CLIENT_ID }}
+          legacy-private-key: ${{ secrets.PIN_BUMP_APP_PRIVATE_KEY }}
+          fallback: github-token
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Add the actor's labels
+        if: steps.actor.outputs.labels != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+          LABELS: ${{ steps.actor.outputs.labels }}
+        run: gh pr edit "$PR" --add-label "$LABELS"
+      - name: Queue auto-merge
+        if: steps.actor.outputs.merge != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+          METHOD: ${{ steps.actor.outputs.merge }}
+        run: gh pr merge "$PR" --auto "--$METHOD"
