@@ -1,0 +1,12 @@
+name: Herald
+description: Checks each PR's title is a Conventional Commit (pr-title.yml); its labelling duty went to Grafter
+theme: fantasy
+status: active
+identity: github-actions
+runs_as: GITHUB_TOKEN
+permissions: {pull_requests: read}
+acts_on: [andronics/brain]
+trigger: {workflows: [pr-title.yml], events: [pull_request]}
+merge_policy: never
+superseded_by:
+  - {actor: grafter, scope: labelling dependency PRs}

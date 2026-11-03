@@ -1,0 +1,16 @@
+name: Release Bot
+description: The release App this owner used before Tagwarden; its release-tag duty moved, its changelog duty too
+theme: fantasy
+status: superseded
+identity: github-app
+app: old-release-bot
+app_id: 1000001
+client_id: Iv23lixxxxxxxxxxxxxx
+key: actors/old-release-bot/private-key
+roles: [release]
+fallback: github-token
+permissions: {contents: write}
+acts_on: []
+trigger: {workflows: [release-please.yml]}
+merge_policy: never
+superseded_by: tagwarden

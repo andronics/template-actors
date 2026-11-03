@@ -1,0 +1,87 @@
+# template-actors: a feature overlay for a repository that is, or declares, automation actors
+# (GitHub Apps, workflow tokens, GitHub's own bots, local scheduled jobs). It goes on top of
+# template-base and any stack overlay, and reads base's answers (it never asks them again):
+#
+#   uvx copier copy --trust gh:andronics/template-base my-project
+#   uvx copier copy --trust gh:andronics/template-obsidian my-project   # or any stack
+#   uvx copier copy --trust gh:andronics/template-actors my-project
+#
+# It adds the actor manifest's schema (.github/actors/actor.schema.json), the actors-* scripts
+# and workflows, and scripts/checks.d/40-actors.sh. The manifests (.github/actors/<slug>.yml)
+# are the project's. A feature overlay fills no slot and adds no required check (template-base
+# decision 0001; this repository's docs/decisions/0001).
+
+_min_copier_version: "9.19.0"
+_subdirectory: template
+_templates_suffix: .jinja
+_answers_file: .copier-answers.actors.yml
+_external_data:
+  base: .copier-answers.base.yml
+
+# GitHub Actions uses ${{ }}, so Jinja uses [[ ]] / [% %] instead.
+_envops:
+  variable_start_string: "[["
+  variable_end_string: "]]"
+  block_start_string: "[%"
+  block_end_string: "%]"
+  comment_start_string: "[#!"
+  comment_end_string: "!#]"
+  keep_trailing_newline: true
+  trim_blocks: true
+  lstrip_blocks: true
+
+_message_after_copy: |
+  [[ project_name ]] can declare actors. Add one with:
+    uv run scripts/actors.py new <slug> --identity github-app
+  then edit .github/actors/<slug>.yml, run uv run scripts/actors.py docs, and sh scripts/checks.sh.
+  Next: git add -A && git commit -m "chore: add template-actors"
+
+_message_after_update: |
+  Next: resolve any <<<<<<< markers, run sh scripts/post-update.sh, review git diff and commit.
+
+# ------------------------------------------------------- from base (read, never asked)
+
+# `copier update` replays each version in an empty directory, without base's answers file, so
+# base's answers are recorded in this overlay's answers file (template-base decision 0001,
+# "Overlays keep a copy of base's answers"). ask: false never prompts; the validator rejects a
+# recorded copy that differs from base's file, so Copier rereads it and the next replay gets it.
+base_answers:
+  type: yaml
+  ask: false
+  default: "[[ dict(_external_data.base | items | rejectattr('0', 'in', ['_commit', '_src_path'])) | tojson ]]"
+  validator: >-
+    [% if _external_data.base and base_answers != dict(_external_data.base | items
+       | rejectattr('0', 'in', ['_commit', '_src_path'])) %]stale: reread .copier-answers.base.yml[% endif %]
+
+# Fails the copy or update, with the reason, unless base v2.0.0 or later is applied. A replay has
+# no answers file, only the recorded copy; the real render beside it reads the file, so the check
+# runs there. The stack overlay isn't named: any stack will do, and base's contract check already
+# requires exactly one.
+compat_check:
+  type: str
+  when: false
+  default: >-
+    [%- set re = '^v?(\\d+)\\.(\\d+)\\.(\\d+)' -%]
+    [%- set b = _external_data.base._commit | default('') | string -%]
+    [%- set bv = b | regex_search(re, '\\1', '\\2', '\\3') -%]
+    [%- if not b and base_answers | default({}) -%]ok
+    [%- elif not b -%][[ {}['template-actors needs template-base first: .copier-answers.base.yml is missing'].stop ]]
+    [%- elif not bv or (bv | map('int') | list) < [2, 0, 0] -%][[ {}['template-actors needs template-base v2.0.0 or later; this project has ' ~ b].stop ]]
+    [%- else -%]ok[%- endif -%]
+
+project_name:
+  type: str
+  default: "[[ base_answers.project_name ]]"
+  when: false
+
+# ---------------------------------------------------------------- questions
+
+# Each owner's actors share a theme, so a name says whose it is (decision 0001, question 11).
+# It is the default for `actors.py new` and the avatar's style block; each manifest records its own.
+theme:
+  type: str
+  help: The theme of this owner's actors (names, legends and avatars)
+  choices:
+    "fantasy: heraldic emblems, forest green and gold": fantasy
+    "sci-fi: mission patches, navy, cyan and amber": sci-fi
+  default: fantasy

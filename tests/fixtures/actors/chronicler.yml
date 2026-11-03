@@ -1,0 +1,20 @@
+name: Chronicler
+emoji: 📜
+description: Writes the changelog and opens the Release PR (release-please), under Tagwarden's name
+theme: fantasy
+status: active
+identity: github-app
+app: andronics-tagwarden
+app_id: 5570569
+client_id: Iv23liCMzTeOs8PtF13g
+key: actors/tagwarden/private-key
+roles: [release]
+fallback: github-token
+permissions: {contents: write, pull_requests: write, issues: write}
+acts_on: [andronics/template-base]
+trigger: {workflows: [release-please.yml], events: [push]}
+merge_policy: never
+labels:
+  - {name: release, color: 5319e7, description: A Release PR}
+branch_prefix: release-please--branches--
+avatar: {file: chronicler.png}

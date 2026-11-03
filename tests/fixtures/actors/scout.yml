@@ -1,0 +1,18 @@
+name: Scout
+emoji: 🛰️
+description: "Daily Brain pull: reads what followed sources changed and proposes note updates in one PR"
+theme: fantasy
+status: active
+identity: github-app
+app: andronics-scout
+app_id: 5582684
+client_id: Iv23liz818GMJcZrcMSo
+key: actors/scout/private-key
+roles: [brain-pull]
+fallback: github-token
+permissions: {contents: write, pull_requests: write, issues: write, actions: write}
+acts_on: [andronics/brain]
+trigger: {schedule: "0 5 * * *"}
+merge_policy: never
+branch_prefix: brain-pull/
+avatar: {file: scout.png}

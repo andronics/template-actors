@@ -1,0 +1,4 @@
+# GitHub's About box for this repository.
+description = "Copier feature overlay for automation actors on template-base and any stack: actor manifests and their checks, secret setup, the PR contract and auto-merge, a local-cron kit, avatars"
+homepage = ""
+topics = ["automation", "copier", "copier-template", "github-actions", "github-apps", "template"]

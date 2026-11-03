@@ -1,0 +1,15 @@
+name: Grafter
+emoji: 🐛
+description: "Dependabot: keeps every keeper's tools current"
+theme: fantasy
+status: active
+identity: github-native
+runs_as: dependabot[bot]
+permissions: {contents: write, pull_requests: write}
+acts_on: [andronics/brain]
+trigger: {events: [schedule]}
+merge_policy: auto-after-codeowner
+branch_prefix: dependabot/
+labels:
+  - {name: dependencies, color: 0366d6, description: Pull requests that update a dependency file}
+avatar: {file: grafter.png}

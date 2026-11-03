@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/andronics/template-actors/blob/main/template/.github/actors/actor.schema.json",
+  "$comment": "Template-owned: template-actors (decision 0001). One manifest per actor: .github/actors/<slug>.yml. scripts/actors.py check validates every manifest against this, then the rules a schema can't say (one App per role, shared Apps agree, no secret values).",
+  "title": "Actor manifest",
+  "description": "An identity this repository's automation acts as. The manifest is the source of truth; vault actor notes are generated from it (scripts/actors.py note). Never a key or token: only the pass path of a key.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "description", "theme", "status", "identity", "permissions", "acts_on", "trigger", "merge_policy"],
+  "properties": {
+    "name": {
+      "description": "The actor's display name, Title Case (Tagwarden, Night Scribe).",
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9' -]*$",
+      "maxLength": 40
+    },
+    "emoji": {
+      "description": "The emoji its vault note's name starts with.",
+      "type": "string",
+      "maxLength": 16
+    },
+    "description": {
+      "description": "One line: what it does in the real automation.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[^\\n]+$"
+    },
+    "theme": {
+      "description": "The owner's theme: the style block its avatar takes.",
+      "enum": ["fantasy", "sci-fi"]
+    },
+    "status": {
+      "description": "planned -> created (the App exists) -> installed (on its repos) -> active (doing its job) -> retired, superseded (wholly replaced, by superseded_by) or deleted (the App or job is gone).",
+      "enum": ["planned", "created", "installed", "active", "retired", "superseded", "deleted"]
+    },
+    "identity": {
+      "description": "What it acts as. Only github-app actors have an App, ids, a key, roles and a fallback.",
+      "enum": ["github-app", "github-actions", "github-native", "local"]
+    },
+    "runs_as": {
+      "description": "Every identity but github-app: whose rights it uses (GITHUB_TOKEN, dependabot[bot], a deploy key and a gh login).",
+      "type": "string",
+      "maxLength": 300
+    },
+    "app": {
+      "description": "github-app only: the App's slug. One App may serve several actors (Chronicler runs on Tagwarden's): give each the same app, app_id, client_id and key.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "app_id": {
+      "description": "github-app only: the App ID from its settings page. Public, not a secret.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "client_id": {
+      "description": "github-app only: the Client ID from its settings page. Public, not a secret. actors-setup.py sets it as <ROLE>_APP_CLIENT_ID.",
+      "type": "string",
+      "pattern": "^Iv[0-9A-Za-z.]{8,40}$"
+    },
+    "key": {
+      "description": "github-app only: the pass path of the App's private key (actors/<slug>/private-key). Never the key. actors-setup.py pipes it into <ROLE>_APP_PRIVATE_KEY.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$",
+      "maxLength": 200
+    },
+    "permissions": {
+      "description": "What it can do, least needed: the App's or token's permissions as scope: level. A local actor lists what it does with the rights it runs as.",
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z][a-z_]*$"},
+      "additionalProperties": {"enum": ["read", "write", "admin"]}
+    },
+    "acts_on": {
+      "description": "Where it is installed or acts, as GitHub owner/name.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"}
+    },
+    "trigger": {
+      "description": "What starts it: this repository's workflow files and their events, a cron schedule, or a local command.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "workflows": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Za-z0-9._-]+\\.ya?ml$"}
+        },
+        "events": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z_]+$"}
+        },
+        "schedule": {
+          "description": "Five-field cron, UTC for workflows, local time for a local actor.",
+          "type": "string",
+          "pattern": "^\\S+( \\S+){4}$"
+        },
+        "command": {"type": "string", "minLength": 1}
+      }
+    },
+    "roles": {
+      "description": "github-app only: the roles it fills, which name its secrets (decision 0001, question 2): update -> UPDATE_APP_*, release -> RELEASE_APP_*, brain-pull -> BRAIN_PULL_APP_*.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["update", "release", "brain-pull"]}
+    },
+    "merge_policy": {
+      "description": "Who merges its PRs. never: a person. auto-on-ci: auto-merge, once the required checks pass. auto-after-codeowner: auto-merge, once the required checks pass and a code owner approves (the ruleset's required review holds it).",
+      "enum": ["never", "auto-on-ci", "auto-after-codeowner"]
+    },
+    "merge_method": {
+      "description": "How an auto-merged PR merges. squash unless its branch lives on (a live branch merges).",
+      "enum": ["squash", "merge", "rebase"],
+      "default": "squash"
+    },
+    "fallback": {
+      "description": "github-app only: without the App's variable, fail or skip (required), or use github.token (github-token) and accept that CI won't run on its PRs and a workflow change becomes an issue.",
+      "enum": ["required", "github-token"]
+    },
+    "labels": {
+      "description": "The labels its PRs carry, created idempotently (actors.py labels, actors-labels.yml).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 50},
+          "color": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"},
+          "description": {"type": "string", "maxLength": 100}
+        }
+      }
+    },
+    "branch_prefix": {
+      "description": "Every branch its PRs come from starts with this (release-please--, chore/template-update, auto/nightly). Required unless merge_policy is never.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._/-]+$"
+    },
+    "avatar": {
+      "description": "The avatar: a PNG (actors-avatar.py: 1024x1024, 256 colours, under 1 MB, legible at 20 to 64 px) and the prompt it was made from, without the theme's style block.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file"],
+      "properties": {
+        "file": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*\\.png$"},
+        "prompt": {"type": "string", "maxLength": 500}
+      }
+    },
+    "superseded_by": {
+      "description": "Wholly replaced: the successor's slug, with status superseded. Partly replaced: a list of {actor, scope}, the part each successor took over, while this one keeps the rest.",
+      "oneOf": [
+        {"$ref": "#/$defs/slug"},
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["actor", "scope"],
+            "properties": {
+              "actor": {"$ref": "#/$defs/slug"},
+              "scope": {"type": "string", "minLength": 1, "maxLength": 200}
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"identity": {"const": "github-app"}}, "required": ["identity"]},
+      "then": {"required": ["app", "app_id", "client_id", "key", "fallback"]},
+      "else": {
+        "properties": {
+          "app": false, "app_id": false, "client_id": false, "key": false, "roles": false, "fallback": false
+        }
+      }
+    },
+    {
+      "if": {"properties": {"merge_policy": {"enum": ["auto-on-ci", "auto-after-codeowner"]}}, "required": ["merge_policy"]},
+      "then": {"required": ["branch_prefix"]}
+    },
+    {
+      "if": {"properties": {"status": {"const": "superseded"}}, "required": ["status"]},
+      "then": {"required": ["superseded_by"], "properties": {"superseded_by": {"$ref": "#/$defs/slug"}}}
+    }
+  ],
+  "$defs": {
+    "slug": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"}
+  }
+}

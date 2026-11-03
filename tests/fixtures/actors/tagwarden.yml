@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=actor.schema.json
+name: Tagwarden
+emoji: 🔦
+description: Cuts releases and is the only actor allowed to create v* tags
+theme: fantasy
+status: active
+identity: github-app
+app: andronics-tagwarden
+app_id: 5570569
+client_id: Iv23liCMzTeOs8PtF13g
+key: actors/tagwarden/private-key
+roles: [release]
+fallback: github-token
+permissions:
+  contents: write
+  pull_requests: write
+  issues: write
+  metadata: read
+acts_on: [andronics/template-base, andronics/brain]
+trigger:
+  workflows: [release-please.yml]
+  events: [push, workflow_dispatch]
+merge_policy: never
+labels:
+  - {name: release, color: 5319e7, description: A Release PR}
+branch_prefix: release-please--
+avatar:
+  file: tagwarden.png
+  prompt: A lantern-bearing warden holding a great iron key over a ribbon of milestones

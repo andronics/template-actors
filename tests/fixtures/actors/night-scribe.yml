@@ -1,0 +1,16 @@
+name: Night Scribe
+emoji: 🌙
+description: Commits what changed on the live branch nightly and proposes it to main in a PR that merges itself once ci passes
+theme: fantasy
+status: active
+identity: local
+runs_as: the deploy key desktop-brain-deploy for pushes, committing as brain-cron, and Stephen's gh login for the PR
+permissions: {contents: write, pull_requests: write}
+acts_on: [andronics/brain]
+trigger:
+  schedule: "45 2 * * *"
+  command: scripts/actors-cron.sh --dir /mnt/brain --work-branch live --pr-branch auto/nightly --name brain-cron --email brain-cron@desktop
+merge_policy: auto-on-ci
+merge_method: merge
+branch_prefix: auto/nightly
+avatar: {file: night-scribe.png}
