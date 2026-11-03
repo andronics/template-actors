@@ -56,8 +56,9 @@ avatar: {file: tagwarden.png, prompt: A lantern-bearing warden holding a great i
 ## Setup notes
 
 - Creating and installing the Apps, their rulesets and "Allow auto-merge" stay manual, for the owner.
-- `actors-automerge.yml` uses `GITHUB_TOKEN` until template-base's `app-token` action lands, so a merge it
-  queued starts no workflow on `main`.
+- `actors-automerge.yml` queues the merge with the `update` role's App (`UPDATE_APP_CLIENT_ID`,
+  `UPDATE_APP_PRIVATE_KEY`), through template-base's `app-token` action. Without it, `GITHUB_TOKEN` queues it,
+  and the merge then starts no workflow on `main`.
 
 ## Where this came from
 

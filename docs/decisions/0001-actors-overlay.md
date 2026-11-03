@@ -110,8 +110,9 @@ the shim in template-base's mint action; `actors-setup.py --legacy` keeps them c
 Keys or tokens (only pass paths), vault notes, App creation or installation, rulesets, "Allow Actions to create
 PRs", the pass layout, hard-coded owners or repositories, and anything template-base owns (base-ci, pr-title,
 template-update, Dependabot auto-merge, CODEOWNERS, gitleaks). **No token mint of its own:** where an actor
-workflow needs an App token it uses template-base's `.github/actions/app-token` (a `TODO(template-base
-app-token)` marks the place until that merges).
+workflow needs an App token it calls template-base's `.github/actions/app-token` (template-base decision 0004).
+`actors-automerge.yml` queues with the `update` role's App (`UPDATE_APP_*`, legacy `PIN_BUMP_APP_*`), so the
+merge commit starts `main`'s workflows, and falls back to `GITHUB_TOKEN` without it.
 
 ## Alternatives considered
 
@@ -131,8 +132,10 @@ app-token)` marks the place until that merges).
   `actors-setup.py` sets their secrets from pass.
 - `auto-on-ci` and `auto-after-codeowner` queue the same auto-merge: the difference is the `main` ruleset's
   required review, which the manifest declares and the README documents but nothing checks.
-- Until template-base's mint action merges, `actors-automerge.yml` queues with `GITHUB_TOKEN`, so the merge
-  starts no workflow on `main` (as with base's Dependabot auto-merge).
+- Without an `update` App, `actors-automerge.yml` queues with `GITHUB_TOKEN`, so the merge starts no workflow
+  on `main` (as with base's Dependabot auto-merge).
+- `actors-automerge.yml` pins template-base's action to the merge commit of template-base#48 until its first
+  release (v2.1.0); Renovate moves it.
 - The repository needs "Allow auto-merge" for `actors-automerge.yml`, and the Apps installed for `actors-setup`'s
   secrets to be any use.
 
@@ -141,5 +144,6 @@ app-token)` marks the place until that merges).
 - **auto-on-ci versus a required review.** Where `main` requires a code owner's review, `auto-on-ci` can't merge
   unreviewed. Recommendation: leave it to each repository's ruleset (Night Scribe's brain has no required
   review); revisit if an actor needs a bypass.
-- **Which App queues auto-merge** once the mint action exists: the merge should start `main`'s workflows.
-  Recommendation: the `update` role's App (it has `contents: write` and `pull_requests: write`).
+- **Which App queues auto-merge.** Built with the `update` role's App (it has `contents: write` and
+  `pull_requests: write`, and the merge must start `main`'s workflows). Recommendation: keep it; the
+  alternative, each actor's own App, would need a role per actor.
