@@ -48,7 +48,7 @@ _message_after_update: |
 base_answers:
   type: yaml
   ask: false
-  default: "[[ dict(_external_data.base | items | rejectattr('0', 'in', ['_commit', '_src_path'])) | tojson ]]"
+  default: "[[ dict(_external_data.base | items | rejectattr('0', 'in', ['_commit', '_src_path'])) | to_json(ensure_ascii=False) ]]"
   validator: >-
     [% if _external_data.base and base_answers != dict(_external_data.base | items
        | rejectattr('0', 'in', ['_commit', '_src_path'])) %]stale: reread .copier-answers.base.yml[% endif %]
